@@ -7,9 +7,9 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import * as bcrypt from 'bcryptjs';
-import { MailerService } from '@nestjs-modules/mailer';
 import { randomBytes } from 'crypto';
 
+import { MailService } from '../mail/mail.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User, UserDocument } from './schemas/user.schema';
@@ -19,9 +19,15 @@ import { Role } from './interfaces/user.interface'; // Import Role enum để co
 export class UsersService {
   constructor(
     @InjectModel(User.name) private userModel: Model<UserDocument>,
-    private readonly mailerService: MailerService,
+    private readonly mailService: MailService,
   ) { }
 
+  /**
+   * Create a new user, send verification email
+   * @param createUserDto DTO with name, email, password
+   * @throws ConflictException if email already exists
+   * @returns user object (without password)
+   */
   async create(createUserDto: CreateUserDto): Promise<Omit<User, 'password'>> {
     const { email, password, name } = createUserDto;
 
@@ -33,10 +39,10 @@ export class UsersService {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // Sinh activationToken
+    // Generate activationToken
     const activationToken = randomBytes(32).toString('hex');
 
-    // Mặc định role khi tạo mới là 'user'
+    // Default role is 'user'
     const createdUser = new this.userModel({
       name,
       email,
@@ -48,11 +54,11 @@ export class UsersService {
 
     const savedUser = await createdUser.save();
 
-    // Gửi email xác thực
-    await this.mailerService.sendMail({
+    // Send verification email
+    await this.mailService.sendMail({
       to: email,
-      subject: 'Xác thực tài khoản My Task App',
-      template: './verify-account',
+      subject: 'Verify your My Task App account',
+      templatePath: __dirname + '/../mail/templates/verify-account.hbs',
       context: {
         name,
         url: `${process.env.APP_URL || 'http://localhost:3000'}/auth/verify/${activationToken}`,
@@ -63,10 +69,20 @@ export class UsersService {
     return result;
   }
 
+  /**
+   * Get all users (without password)
+   * @returns array of users
+   */
   async findAll(): Promise<User[]> {
     return this.userModel.find().select('-password').exec();
   }
 
+  /**
+   * Get user by id (without password)
+   * @param id user id
+   * @throws NotFoundException if user not found
+   * @returns user object
+   */
   async findOne(id: string): Promise<User> {
     const user = await this.userModel.findById(id).select('-password').exec();
     if (!user) {
@@ -75,34 +91,47 @@ export class UsersService {
     return user;
   }
 
+  /**
+   * Get user by email
+   * @param email user email
+   * @returns user document or null
+   */
   async findOneByEmail(email: string): Promise<UserDocument | null> {
     return this.userModel.findOne({ email }).exec();
   }
 
+  /**
+   * Update user profile (admin can update any, user can only update self)
+   * @param id user id
+   * @param updateUserDto DTO with fields to update
+   * @param currentUser current user info (from request)
+   * @throws ForbiddenException if not allowed
+   * @throws NotFoundException if user not found
+   * @returns updated user object
+   */
   async update(id: string, updateUserDto: UpdateUserDto, currentUser: any): Promise<User> {
-    // currentUser là req.user được truyền từ controller, chứa userId và role
     const isNotAdmin = currentUser.role !== Role.ADMIN;
 
-    // 1. Phân quyền: User thường chỉ được cập nhật profile của chính mình
+    // Only allow user to update their own profile
     if (isNotAdmin && currentUser.userId !== id) {
-      throw new ForbiddenException('Bạn chỉ có thể cập nhật profile của chính mình.');
+      throw new ForbiddenException('You can only update your own profile.');
     }
 
-    // 2. Tạo một bản sao của DTO để tránh thay đổi đối tượng gốc
+    // Clone DTO to avoid mutating original
     const dtoToUpdate = { ...updateUserDto };
 
-    // 3. Xử lý logic mật khẩu: Nếu người dùng gửi lên mật khẩu mới, ta cần hash nó
+    // Hash new password if provided
     if (dtoToUpdate.password) {
       const salt = await bcrypt.genSalt(10);
       dtoToUpdate.password = await bcrypt.hash(dtoToUpdate.password, salt);
     }
 
-    // 4. Phân quyền: Ngăn người dùng thường tự đổi vai trò của mình
+    // Prevent non-admin from changing role
     if (isNotAdmin && dtoToUpdate.role) {
-      throw new ForbiddenException('Bạn không có quyền thay đổi vai trò.');
+      throw new ForbiddenException('You are not allowed to change your role.');
     }
 
-    // 5. Thực hiện cập nhật
+    // Update user
     const updatedUser = await this.userModel
       .findByIdAndUpdate(id, dtoToUpdate, { new: true })
       .select('-password')
@@ -115,17 +144,17 @@ export class UsersService {
     return updatedUser;
   }
 
-  async remove(id: string): Promise<{ message: string }> {
-    // Thêm logic không cho admin tự xóa chính mình
-    // Bạn cần truyền currentUser vào hàm remove từ controller
-    // if(currentUser.userId === id) {
-    //   throw new ForbiddenException('Bạn không thể tự xóa chính mình.');
-    // }
-
+  /**
+   * Delete user by id
+   * @param id user id
+   * @throws NotFoundException if user not found
+   * @returns void
+   */
+  async remove(id: string): Promise<void> {
+    // You can add logic to prevent admin from deleting themselves if needed
     const result = await this.userModel.deleteOne({ _id: id }).exec();
     if (result.deletedCount === 0) {
       throw new NotFoundException(`User with ID: ${id} not found`);
     }
-    return { message: `Successfully deleted user with ID: ${id}` };
   }
 }

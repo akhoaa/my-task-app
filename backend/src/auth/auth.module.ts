@@ -9,6 +9,7 @@ import { LocalStrategy } from './local.strategy';
 import { JwtStrategy } from './jwt.strategy';
 import { MongooseModule } from '@nestjs/mongoose';
 import { User, UserSchema } from 'src/users/schemas/user.schema';
+import { MailModule } from '../mail/mail.module';
 
 @Module({
   imports: [
@@ -18,11 +19,12 @@ import { User, UserSchema } from 'src/users/schemas/user.schema';
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
-        secret: 'MY_SECRET_KEY',
+        secret: configService.get<string>('JWT_SECRET'),
         signOptions: { expiresIn: '60m' },
       }),
       inject: [ConfigService],
     }),
+    MailModule,
   ],
   providers: [AuthService, LocalStrategy, JwtStrategy],
   controllers: [AuthController]

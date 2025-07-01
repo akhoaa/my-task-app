@@ -13,7 +13,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     }
 
     async validate(payload: any) {
-        // payload là thông tin đã được giải mã từ JWT
-        return { userId: payload.sub, email: payload.email };
+        // Trả về cả role để guard kiểm tra phân quyền
+        return { userId: payload.sub, email: payload.email, role: payload.role };
     }
 }

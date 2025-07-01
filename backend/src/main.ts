@@ -2,9 +2,13 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { AllExceptionsFilter } from './all-exceptions.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  // Đăng ký filter log lỗi toàn cục
+  app.useGlobalFilters(new AllExceptionsFilter());
 
   // Cấu hình ValidationPipe toàn cục
   // Giúp tự động validate các DTO ở tất cả các controller
