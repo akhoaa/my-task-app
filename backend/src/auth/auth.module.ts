@@ -26,7 +26,15 @@ import { MailModule } from '../mail/mail.module';
     }),
     MailModule,
   ],
-  providers: [AuthService, LocalStrategy, JwtStrategy],
+  providers: [
+    AuthService,
+    LocalStrategy,
+    {
+      provide: JwtStrategy,
+      useFactory: (configService: ConfigService) => new JwtStrategy(configService),
+      inject: [ConfigService],
+    },
+  ],
   controllers: [AuthController]
 })
 export class AuthModule { }

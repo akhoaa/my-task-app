@@ -22,7 +22,7 @@ async function seed() {
         createdAt?: Date;
         updatedAt?: Date;
     }> = [
-            { name: 'Admin 1', email: 'admin1@example.com', password: 'admin123', role: 'admin', isActive: true, createdAt: undefined, updatedAt: undefined },
+            { name: 'Admin 1', email: 'admin1@example.com', password: ' 123', role: 'admin', isActive: true, createdAt: undefined, updatedAt: undefined },
             { name: 'Admin 2', email: 'admin2@example.com', password: 'admin123', role: 'admin', isActive: true, createdAt: undefined, updatedAt: undefined },
             { name: 'User 1', email: 'user1@example.com', password: 'user123', role: 'user', isActive: true, createdAt: undefined, updatedAt: undefined },
             { name: 'User 2', email: 'user2@example.com', password: 'user123', role: 'user', isActive: true, createdAt: undefined, updatedAt: undefined },
