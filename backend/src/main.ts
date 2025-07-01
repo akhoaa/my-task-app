@@ -44,6 +44,7 @@ async function bootstrap() {
 
   // Khởi động ứng dụng
   // Sử dụng biến môi trường PORT nếu có, nếu không thì dùng cổng 3000
+  app.enableCors();
   await app.listen(process.env.PORT ?? 3000);
 }
 

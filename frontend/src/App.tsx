@@ -1,20 +1,26 @@
-// src/App.tsx
-
 import React from 'react';
-import { AuthProvider } from './contexts/AuthContext';
-import AppRoutes from './routes/AppRoutes';
+import logo from './logo.svg';
+import './App.css';
 
 function App() {
-    return (
-        // Bước 1: Bọc toàn bộ ứng dụng trong AuthProvider.
-        // Điều này cho phép mọi component con truy cập vào trạng thái đăng nhập.
-        <AuthProvider>
-            {/* Bước 2: Render component AppRoutes.
-                AppRoutes sẽ lo việc quyết định trang nào (LoginPage, TodoListPage,...)
-                sẽ được hiển thị dựa trên URL của trình duyệt. */}
-            <AppRoutes />
-        </AuthProvider>
-    );
+  return (
+    <div className="App">
+      <header className="App-header">
+        <img src={logo} className="App-logo" alt="logo" />
+        <p>
+          Edit <code>src/App.tsx</code> and save to reload.
+        </p>
+        <a
+          className="App-link"
+          href="https://reactjs.org"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Learn React
+        </a>
+      </header>
+    </div>
+  );
 }
 
 export default App;

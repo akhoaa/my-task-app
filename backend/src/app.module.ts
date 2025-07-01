@@ -48,9 +48,7 @@ import { ReportsModule } from './reports/reports.module';
           from: `"No Reply" <${configService.get<string>('MAIL_FROM')}>`,
         },
         template: {
-          // Đường dẫn tới thư mục chứa các file template email.
-          // join(__dirname, '..', 'templates') sẽ trỏ tới thư mục 'templates' ở thư mục gốc.
-          dir: join(__dirname, '..', 'templates'),
+          dir: join(__dirname, 'src', 'templates'),
           adapter: new HandlebarsAdapter(),
           options: {
             strict: true,
